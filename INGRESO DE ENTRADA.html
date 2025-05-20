@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Registro de Entrada/Salida</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #e9ecef; /* Color de fondo más suave */
+            color: #343a40;
+        }
+        .container {
+            max-width: 500px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); /* Sombra más pronunciada */
+            margin-bottom: 20px;
+        }
+        h2, h3 {
+            text-align: center;
+            color: #007bff; /* Color azul para los títulos */
+            margin-bottom: 20px;
+        }
+        input[type="text"],
+        input[type="password"],
+        input[type="date"],
+        select {
+            width: calc(100% - 22px); /* Ajuste para el padding y borde */
+            padding: 12px;
+            margin-top: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            box-sizing: border-box; /* Incluye padding y borde en el ancho total */
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 6px;
+            background-color: #007bff;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease; /* Transición suave al pasar el ratón */
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:active {
+            background-color: #004085;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .message {
+            color: red;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        table {
+            width: 100%;
+            margin-top: 25px;
+            border-collapse: collapse;
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden; /* Para que los bordes de la tabla se redondeen */
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        th, td {
+            padding: 12px 15px;
+            border: 1px solid #dee2e6;
+            text-align: left; /* Alineación a la izquierda para mejor lectura */
+            font-size: 15px;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa; /* Color de fila alterno */
+        }
+        #exportarBtn, #eliminarBtn {
+            margin-top: 20px;
+            background-color: #28a745; /* Verde para exportar */
+        }
+        #exportarBtn:hover {
+            background-color: #218838;
+        }
+        #eliminarBtn {
+            background-color: #dc3545; /* Rojo para eliminar */
+        }
+        #eliminarBtn:hover {
+            background-color: #c82333;
+        }
+        #filtros {
+            margin-top: 25px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #f2f2f2;
+        }
+        #filtros input {
+            margin-bottom: 0;
+        }
+        #filtros label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+            color: #495057;
+        }
+        .actions-buttons {
+            display: flex;
+            gap: 10px; /* Espacio entre los botones */
+            flex-wrap: wrap; /* Permite que los botones se envuelvan en pantallas pequeñas */
+        }
+        .actions-buttons button {
+            flex: 1; /* Permite que los botones se expandan para llenar el espacio */
+            min-width: 150px; /* Ancho mínimo para cada botón */
+        }
+        .admin-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .admin-buttons button {
+            flex: 1;
+        }
+        .checkbox-column {
+            width: 30px; /* Ancho fijo para la columna del checkbox */
+            text-align: center;
+        }
+        .status-cell {
+            font-weight: bold;
+        }
+        .status-atraso {
+            color: #dc3545; /* Rojo para atraso */
+        }
+        .status-atiempo {
+            color: #28a745; /* Verde para a tiempo */
+        }
+    </style>
+</head>
+<body>
+
+<div id="login" class="container">
+    <h2>Inicio de sesión</h2>
+    <input type="text" id="nombre" placeholder="Ingresa tu nombre" />
+    <button onclick="verificarNombre()">Continuar</button>
+    <p id="error" class="message"></p>
+</div>
+
+<div id="admin-pass" class="container" style="display:none;">
+    <h3>Contraseña de administrador</h3>
+    <input type="password" id="password" placeholder="Contraseña" />
+    <button onclick="verificarAdmin()">Entrar</button>
+    <p id="passError" class="message"></p>
+</div>
+
+<div id="registro" class="container" style="display:none;">
+    <h2>Bienvenido, <span id="usuario"></span></h2>
+    <div class="actions-buttons">
+        <button id="btnEntrada" onclick="registrarEntrada()">Registrar Entrada</button>
+        <button id="btnSalida" onclick="registrarSalida()">Registrar Salida</button>
+    </div>
+
+    <div class="admin-buttons">
+        <button id="exportarBtn" style="display:none;" onclick="exportarExcel()">Exportar a Excel</button>
+        <button id="eliminarBtn" style="display:none;" onclick="eliminarSeleccionados()">Eliminar seleccionados</button>
+    </div>
+
+    <div id="filtros" style="display:none;">
+        <h3>Filtros de Registros</h3>
+        <label for="filtroNombre">Filtrar por nombre:</label>
+        <input type="text" id="filtroNombre" placeholder="Nombre..." oninput="cargarRegistros(true)" />
+        <label for="filtroFecha">Filtrar por fecha:</label>
+        <input type="date" id="filtroFecha" oninput="cargarRegistros(true)" />
+    </div>
+
+    <table id="tablaRegistros">
+        <thead>
+            <tr>
+                <th class="checkbox-column"></th>
+                <th>Nombre</th>
+                <th>Fecha</th>
+                <th>Entrada</th>
+                <th>Salida</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<div id="resumenAdmin" class="container" style="display:none; margin-top: 30px;">
+    <h3>Resumen de Registros</h3>
+    <table id="tablaResumen">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Entradas</th>
+                <th>Salidas</th>
+                <th>Atrasos</th>
+                <th>Minutos de Atraso</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script>
+    // Configuración de la aplicación
+    const NOMBRES_PERMITIDOS = ["Julio", "Josué", "Alexanderson", "Jordy", "Reynaldo"];
+    const ADMIN_NOMBRE = "Reynaldo";
+    const ADMIN_PASSWORD = "CACUANGO2025";
+    const HORA_ENTRADA_LIMITE = 14; // 14:00
+    const HORA_SALIDA_INICIO = 23; // 23:00
+    const HORA_SALIDA_FIN = 1;    // 01:00 (del día siguiente)
+
+    let usuarioActual = "";
+    let esAdministrador = false; // Nueva variable para controlar el estado del admin
+
+    // --- Funciones de Autenticación ---
+
+    /**
+     * Verifica el nombre de usuario ingresado.
+     */
+    function verificarNombre() {
+        const nombreInput = document.getElementById("nombre");
+        const nombre = nombreInput.value.trim();
+        const errorMsg = document.getElementById("error");
+
+        if (!NOMBRES_PERMITIDOS.includes(nombre)) {
+            errorMsg.textContent = "Nombre no permitido. Por favor, verifica.";
+            nombreInput.focus(); // Enfocar el campo para que el usuario corrija
+            return;
+        }
+
+        usuarioActual = nombre;
+        errorMsg.textContent = ""; // Limpiar mensaje de error
+
+        if (nombre === ADMIN_NOMBRE) {
+            document.getElementById("login").style.display = "none";
+            document.getElementById("admin-pass").style.display = "block";
+            document.getElementById("password").focus(); // Enfocar el campo de contraseña
+        } else {
+            iniciarSesion(false);
+        }
+    }
+
+    /**
+     * Verifica la contraseña de administrador.
+     */
+    function verificarAdmin() {
+        const passwordInput = document.getElementById("password");
+        const pass = passwordInput.value;
+        const passErrorMsg = document.getElementById("passError");
+
+        if (pass === ADMIN_PASSWORD) {
+            iniciarSesion(true);
+            passErrorMsg.textContent = "";
+        } else {
+            passErrorMsg.textContent = "Contraseña incorrecta. Intenta de nuevo.";
+            passwordInput.value = ""; // Limpiar el campo de contraseña
+            passwordInput.focus();
+        }
+    }
+
+    /**
+     * Inicializa la sesión del usuario.
+     * @param {boolean} admin - Verdadero si es administrador, falso en caso contrario.
+     */
+    function iniciarSesion(admin) {
+        esAdministrador = admin;
+        document.getElementById("usuario").textContent = usuarioActual;
+        document.getElementById("login").style.display = "none";
+        document.getElementById("admin-pass").style.display = "none";
+        document.getElementById("registro").style.display = "block";
+
+        if (esAdministrador) {
+            document.getElementById("exportarBtn").style.display = "block";
+            document.getElementById("eliminarBtn").style.display = "block";
+            document.getElementById("filtros").style.display = "block";
+            document.getElementById("resumenAdmin").style.display = "block"; // Mostrar siempre el resumen para admin
+        } else {
+            document.getElementById("exportarBtn").style.display = "none";
+            document.getElementById("eliminarBtn").style.display = "none";
+            document.getElementById("filtros").style.display = "none";
+            document.getElementById("resumenAdmin").style.display = "none";
+        }
+        cargarRegistros(); // Cargar registros al iniciar sesión
+    }
+
+    // --- Funciones de Registro de Entrada/Salida ---
+
+    /**
+     * Registra la hora de entrada del usuario.
+     */
+    function registrarEntrada() {
+        const ahora = new Date();
+        const horaActual = ahora.getHours();
+        const minutosActuales = ahora.getMinutes();
+
+        // Validación de hora de entrada (14:00 a 18:00)
+        if (horaActual < HORA_ENTRADA_LIMITE || horaActual > 18 || (horaActual === 18 && minutosActuales > 0)) {
+            alert("Solo puedes registrar entrada entre las 14:00 y las 18:00.");
+            return;
+        }
+
+        const fechaActual = ahora.toLocaleDateString('es-EC', { year: 'numeric', month: '2-digit', day: '2-digit' }); // Formato fijo
+        const horaTexto = ahora.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', hour12: false }); // Formato 24h
+
+        let registros = obtenerRegistros();
+        const registroHoy = registros.find(r => r.nombre === usuarioActual && r.fecha === fechaActual);
+
+        if (registroHoy && registroHoy.entrada) {
+            alert("Ya registraste entrada hoy. No se puede registrar dos veces.");
+            return;
+        }
+
+        let estado = "A tiempo";
+        let minutosAtraso = 0;
+
+        // Calcular atraso solo si la entrada es después de la hora límite (14:00)
+        if (horaActual > HORA_ENTRADA_LIMITE || (horaActual === HORA_ENTRADA_LIMITE && minutosActuales > 0)) {
+            minutosAtraso = ((horaActual - HORA_ENTRADA_LIMITE) * 60) + minutosActuales;
+            estado = `Atraso de ${minutosAtraso} min`;
+        }
+
+        // Si ya hay un registro para hoy (quizás solo con salida o vacío), actualizarlo.
+        // Si no, crear uno nuevo.
+        if (registroHoy) {
+            registroHoy.entrada = horaTexto;
+            registroHoy.estado = estado;
+        } else {
+            registros.push({ nombre: usuarioActual, fecha: fechaActual, entrada: horaTexto, salida: "", estado: estado });
+        }
+
+        guardarRegistros(registros);
+        cargarRegistros(); // Recargar la tabla
+    }
+
+    /**
+     * Registra la hora de salida del usuario.
+     */
+    function registrarSalida() {
+        const ahora = new Date();
+        const horaActual = ahora.getHours();
+        const minutosActuales = ahora.getMinutes();
+
+        // Validación de hora de salida (23:00 a 01:00)
+        // Considera que 01:00 es del día siguiente
+        const esHoraValidaSalida = (horaActual >= HORA_SALIDA_INICIO && horaActual <= 23) ||
+                                  (horaActual >= 0 && horaActual <= HORA_SALIDA_FIN && ahora.getDate() === new Date().getDate() + 1); // Si es después de medianoche, la fecha es la del día siguiente
+
+        if (!esHoraValidaSalida) {
+            alert("Solo puedes registrar salida entre las 23:00 y 01:00.");
+            return;
+        }
+
+        const fechaActual = ahora.toLocaleDateString('es-EC', { year: 'numeric', month: '2-digit', day: '2-digit' });
+        const horaTexto = ahora.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+        let registros = obtenerRegistros();
+        // Buscar el registro de hoy. Si la salida es al día siguiente, buscar el registro del día anterior.
+        let registro = registros.find(r => r.nombre === usuarioActual && r.fecha === fechaActual);
+
+        // Si la salida es al día siguiente (ej. 00:30 del 22 de mayo, la entrada fue el 21 de mayo)
+        if (!registro && horaActual <= HORA_SALIDA_FIN) {
+            const fechaAyer = new Date(ahora);
+            fechaAyer.setDate(ahora.getDate() - 1);
+            const fechaAyerTexto = fechaAyer.toLocaleDateString('es-EC', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            registro = registros.find(r => r.nombre === usuarioActual && r.fecha === fechaAyerTexto);
+        }
+
+        if (!registro || !registro.entrada) {
+            alert("Primero debes registrar tu entrada para poder registrar la salida.");
+            return;
+        }
+        if (registro.salida) {
+            alert("Ya registraste la salida hoy. No se puede registrar dos veces.");
+            return;
+        }
+
+        registro.salida = horaTexto;
+        guardarRegistros(registros);
+        cargarRegistros(); // Recargar la tabla
+    }
+
+    // --- Gestión de Datos y UI ---
+
+    /**
+     * Obtiene los registros de localStorage.
+     * @returns {Array} Array de objetos de registro.
+     */
+    function obtenerRegistros() {
+        try {
+            return JSON.parse(localStorage.getItem("registros") || "[]");
+        } catch (e) {
+            console.error("Error al parsear registros de localStorage:", e);
+            return []; // Retorna un array vacío si hay un error de parseo
+        }
+    }
+
+    /**
+     * Guarda los registros en localStorage.
+     * @param {Array} registros - Array de objetos de registro a guardar.
+     */
+    function guardarRegistros(registros) {
+        localStorage.setItem("registros", JSON.stringify(registros));
+    }
+
+    /**
+     * Carga y muestra los registros en la tabla.
+     */
+    function cargarRegistros() {
+        const registros = obtenerRegistros();
+        const tbody = document.querySelector("#tablaRegistros tbody");
+        tbody.innerHTML = ""; // Limpiar tabla antes de cargar
+
+        // Obtener valores de filtro (solo si el administrador está activo)
+        const filtroNombre = esAdministrador ? (document.getElementById("filtroNombre")?.value?.trim().toLowerCase() || "") : "";
+        const filtroFecha = esAdministrador ? (document.getElementById("filtroFecha")?.value || "") : "";
+
+        const registrosFiltrados = registros.filter(r => {
+            // Si no es administrador, solo mostrar sus propios registros
+            if (!esAdministrador && r.nombre !== usuarioActual) {
+                return false;
+            }
+            // Aplicar filtro de nombre si existe
+            if (filtroNombre && !r.nombre.toLowerCase().includes(filtroNombre)) {
+                return false;
+            }
+            // Aplicar filtro de fecha si existe (convertir fecha del registro a formato YYYY-MM-DD para comparar)
+            if (filtroFecha) {
+                const parts = r.fecha.split('/'); // Asumiendo formato DD/MM/YYYY
+                const fechaRegistro = `${parts[2]}-${parts[1]}-${parts[0]}`; // Convertir a YYYY-MM-DD
+                if (fechaRegistro !== filtroFecha) {
+                    return false;
+                }
+            }
+            return true;
+        }).sort((a, b) => { // Ordenar registros por fecha (más reciente primero) y luego por nombre
+            const dateA = new Date(a.fecha.split('/').reverse().join('-')); // Convertir DD/MM/YYYY a YYYY-MM-DD para Date
+            const dateB = new Date(b.fecha.split('/').reverse().join('-'));
+            if (dateA < dateB) return 1;
+            if (dateA > dateB) return -1;
+            return a.nombre.localeCompare(b.nombre);
+        });
+
+
+        registrosFiltrados.forEach(r => {
+            const key = `${r.nombre}|${r.fecha}`; // Clave única para el checkbox
+            const fila = document.createElement("tr");
+
+            // Determinar clase para el estado
+            let estadoClase = '';
+            if (r.estado.includes("Atraso")) {
+                estadoClase = 'status-atraso';
+            } else if (r.estado === "A tiempo") {
+                estadoClase = 'status-atiempo';
+            }
+
+            fila.innerHTML = `
+                <td class="checkbox-column">${esAdministrador ? `<input type="checkbox" class="check-registro" data-key="${key}">` : ""}</td>
+                <td>${r.nombre}</td>
+                <td>${r.fecha}</td>
+                <td>${r.entrada}</td>
+                <td>${r.salida || "Pendiente"}</td>
+                <td class="status-cell ${estadoClase}">${r.estado}</td>
+            `;
+            tbody.appendChild(fila);
+        });
+
+        if (esAdministrador) {
+            mostrarResumen(registrosFiltrados);
+        } else {
+            // Ocultar el resumen si el usuario no es administrador
+            document.getElementById("resumenAdmin").style.display = "none";
+        }
+    }
+
+    /**
+     * Muestra el resumen de registros para el administrador.
+     * @param {Array} registros - Registros a utilizar para el resumen.
+     */
+    function mostrarResumen(registros) {
+        const resumen = {};
+        registros.forEach(r => {
+            if (!resumen[r.nombre]) {
+                resumen[r.nombre] = { entradas: 0, salidas: 0, atrasos: 0, minutosAtraso: 0 };
+            }
+            resumen[r.nombre].entradas++;
+            if (r.salida) resumen[r.nombre].salidas++;
+            if (r.estado.includes("Atraso")) {
+                resumen[r.nombre].atrasos++;
+                // Extraer minutos de atraso de la cadena de estado
+                const match = r.estado.match(/(\d+)\s*min/);
+                if (match && match[1]) {
+                    resumen[r.nombre].minutosAtraso += parseInt(match[1]);
+                }
+            }
+        });
+
+        const resumenTbody = document.querySelector("#tablaResumen tbody");
+        resumenTbody.innerHTML = "";
+        Object.entries(resumen).forEach(([nombre, d]) => {
+            const fila = document.createElement("tr");
+            fila.innerHTML = `
+                <td>${nombre}</td>
+                <td>${d.entradas}</td>
+                <td>${d.salidas}</td>
+                <td>${d.atrasos}</td>
+                <td>${d.minutosAtraso}</td>
+            `;
+            resumenTbody.appendChild(fila);
+        });
+    }
+
+    /**
+     * Elimina los registros seleccionados por el administrador.
+     */
+    function eliminarSeleccionados() {
+        const checkboxes = document.querySelectorAll(".check-registro:checked");
+        if (checkboxes.length === 0) {
+            alert("Por favor, selecciona al menos un registro para eliminar.");
+            return;
+        }
+
+        if (!confirm(`¿Estás seguro de que quieres eliminar ${checkboxes.length} registro(s) seleccionado(s)?`)) {
+            return;
+        }
+
+        let registros = obtenerRegistros();
+        const clavesAEliminar = Array.from(checkboxes).map(cb => cb.dataset.key);
+
+        // Filtrar los registros para mantener solo los que NO están en la lista de claves a eliminar
+        registros = registros.filter(r => !clavesAEliminar.includes(`${r.nombre}|${r.fecha}`));
+
+        guardarRegistros(registros);
+        cargarRegistros(); // Recargar la tabla después de eliminar
+        alert("Registro(s) eliminado(s) correctamente.");
+    }
+
+    /**
+     * Exporta los registros a un archivo Excel.
+     */
+    function exportarExcel() {
+        if (!esAdministrador) {
+            alert("Solo el administrador tiene permiso para exportar a Excel.");
+            return;
+        }
+        const registros = obtenerRegistros();
+        if (!registros.length) {
+            alert("No hay registros para exportar.");
+            return;
+        }
+
+        // Preparar los datos para Excel (puedes ajustar las columnas si lo necesitas)
+        const dataParaExcel = registros.map(r => ({
+            Nombre: r.nombre,
+            Fecha: r.fecha,
+            Entrada: r.entrada,
+            Salida: r.salida || "Pendiente", // Si no hay salida, mostrar "Pendiente"
+            Estado: r.estado
+        }));
+
+        const hoja = XLSX.utils.json_to_sheet(dataParaExcel);
+        const libro = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(libro, hoja, "Registros de Personal");
+        XLSX.writeFile(libro, `registro_personal_${new Date().toLocaleDateString('es-EC').replace(/\//g, '-')}.xlsx`);
+    }
+
+    // Asegurarse de que el input de nombre tenga el foco al cargar la página
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById("nombre").focus();
+    });
+</script>
+
+</body>
+</html>
